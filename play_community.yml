@@ -1,0 +1,13 @@
+- hosts:
+  - opencast_local
+  become: yes
+  become_method: sudo
+  become_user: root
+
+  vars:
+    opencast_repo: https://github.com/opencast/opencast.git
+    opencast_git_folder: ~/opencast-official
+    oc_branch: develop
+  
+  roles:
+    - install

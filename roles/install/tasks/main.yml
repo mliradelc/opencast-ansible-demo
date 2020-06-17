@@ -1,0 +1,69 @@
+- name: Install opencast build dependencies
+  apt:
+    name: "{{ item }}"
+  with_items:
+    - git
+    - build-essential
+    - openjdk-8-jdk
+    - maven
+    - python
+    - unzip
+    - tar
+    - bzip2
+    - nc
+  tags: build
+
+- name: Clone git repo
+  git: 
+    repo: "{{ opencast_repo }}"
+    dest: "~/repos/{{ opencast_git_folder }}"
+    version: "{{ oc_branch }}"
+  tags: build
+
+- name: Clean repo
+  command: git clean -dfx
+  args:
+    chdir: "~/repos/{{ opencast_git_folder }}"
+  tags: build
+
+- name: Build Opencast
+  command: mvn clean install -Pdev -DskipTests
+  args:
+    chdir: "~/repos/{{ opencast_git_folder }}"
+  tags: build
+
+- name: Register opencast build folder
+  find:
+    paths: "~/repos/{{ opencast_git_folder }}/build"
+    recurse: no
+    file_type: directory
+  register: opencast_build_directory
+  tags: config
+
+- name: Install opencast dependencies
+  apt:
+    name: "{{ item }}"
+  with_items:
+    - activemq
+  tags: dependencies
+
+- name: Copy opencast activemq config
+  copy:
+    src: "~/{{ opencast_git_folder }}/docs/scripts/activemq/activemq.xml"
+    dest: "/etc/activemq/activemq.xml"
+  tags:
+    - dependencies
+    - config
+
+- name: copy encoding files
+  copy:
+    src: encoding/
+    dest: "{{ opencast_build_directory.files[0]['path'] }}/etc/encoding"
+  tags: config
+
+
+- name: copy workflows
+  copy:
+    src: workflows/
+    dest: "{{ opencast_build_directory.files[0]['path'] }}/etc/workflows"
+  tags: config

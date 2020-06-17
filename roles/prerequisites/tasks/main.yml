@@ -1,0 +1,54 @@
+- name: Install ffmpeg from Snap
+  snap:
+    name: ffmpeg
+  tags:
+    - ffmpeg
+
+- name: Ensure https repositories are supported
+  apt:
+    name: "{{ item }}"
+    update_cache: yes
+  with_items:
+    - apt-transport-https
+    - ca-certificates
+    - sudo
+  tags:
+    - repos
+
+- name: Set-up Opencast repository (I)
+  apt_key:
+    url: https://pkg.opencast.org/gpgkeys/opencast-deb.key
+    state: present
+  tags:
+    - repos
+
+- name: Set-up Opencast repository (II)
+  apt_repository:
+    repo: deb https://pkg.opencast.org/debian stable/
+    state: present
+  tags:
+    - repos
+
+- name: Install docker for elastic search
+  apt:
+    name: docker.io
+    state: present
+  tags:
+    - elastic_search
+
+- name: Copy elastic search docker service file
+  copy:
+    src: prerequisites/esearchd.service
+    dest: "/etc/systemd/system/esearchd.service"
+    mode: 644
+  tags:
+    - elastic_search
+
+- name: Start Elastic search service
+  service:
+    name: esearchd.service
+    state: started
+    daemon-reload: yes
+    enabled: yes
+  tags:
+    - elastic_search
